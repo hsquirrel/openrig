@@ -119,7 +119,8 @@ it("missing generation fails at the public route before preparation and names ex
   expect(f.registry.currentOccupantGenerationForSession(seat)).toBeNull();
   expect(f.guard.maybeTarget(seat)).toEqual({ nodeId: node, session: seat, pane: "%1", occupant: null });
   const result = await f.req(trigger, { session: seat });
-  expect(result).toMatchObject({ status: 409, body: { reason: "occupant_generation_unavailable" } });
+  expect(result.status).toBe(409);
+  expect(result.body.reason).toBe("occupant_generation_unavailable");
   expect(result.body.error).toContain(`rig reconcile-session ${shellQuote(seat)} --no-launch`);
   expect(result.body.error).toContain(`explicitly retry rig compact ${shellQuote(seat)}`);
   const current = await f.req(state);
@@ -133,7 +134,9 @@ it("missing generation fails at the public route before preparation and names ex
 
 it("missing generation disarms automatic preparation; public reconcile requires a new deliberate attempt", async () => {
   const f = fixture();
-  expect(await f.enforcer.maybeAutoCompact(input)).toMatchObject({ triggered: false, reason: "occupant_generation_unavailable" });
+  const result = await f.enforcer.maybeAutoCompact(input);
+  expect("reason" in result ? result.reason : undefined).toBe("occupant_generation_unavailable");
+  expect(result.triggered).toBe(false);
   const stopped = f.enforcer.getPreparationState(seat)!;
   expect(stopped.status).toBe("stopped");
   expect((await f.req(state)).body.guidance).toContain("--no-launch");
